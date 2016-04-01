@@ -21,23 +21,28 @@ hardening(ALL)
 ```
 
 ## AddConfig
-
-    add_config(<name>
-      [COPY_FROM <config>]
-      [C_FLAGS "<flags>"]
-      [CXX_FLAGS "<flags>"]
-      [LINKER_FLAGS "<flags>"]
-      [EXE_LINKER_FLAGS "<flags>"]
-      [SHARED_LINKER_FLAGS "<flags>"]
-      [MODULE_LINKER_FLAGS "<flags>"]
-      [STATIC_LINKER_FLAGS "<flags>"]
-    )
+```
+add_config(<name>
+  [COPY_FROM <config>]
+  [C_FLAGS "<flags>"]
+  [CXX_FLAGS "<flags>"]
+  [LINKER_FLAGS "<flags>"]
+  [EXE_LINKER_FLAGS "<flags>"]
+  [SHARED_LINKER_FLAGS "<flags>"]
+  [MODULE_LINKER_FLAGS "<flags>"]
+  [STATIC_LINKER_FLAGS "<flags>"]
+)
+```
 
 Add a new build type (configuration). Use `CMAKE_BUILD_TYPE` to use it:
 
     cmake -DCMAKE_BUILD_TYPE=<name> <PATH_TO_SOURCE>
 
-Adds a new build type (configuration) `<name>`. If `COPY_FROM` is set, the compile flags from the configuration `config` are copied. The `*_FLAGS` arguments are appended to `CMAKE_*_FLAGS_<NAME>`. The flags from `LINKER_FLAGS` are appended to `CMAKE_EXE_LINKER_FLAGS_<NAME>`, `CMAKE_SHARED_LINKER_FLAGS_<NAME>` and `CMAKE_MODULE_LINKER_FLAGS_<NAME>`.
+Adds a new build type (configuration) `<name>`. If `COPY_FROM` is set, the 
+compile flags from the configuration `config` are copied. The `*_FLAGS` 
+arguments are appended to `CMAKE_*_FLAGS_<NAME>`. The flags from `LINKER_FLAGS` 
+are appended to `CMAKE_EXE_LINKER_FLAGS_<NAME>`, 
+`CMAKE_SHARED_LINKER_FLAGS_<NAME>` and `CMAKE_MODULE_LINKER_FLAGS_<NAME>`.
 
 ### Example
 
@@ -71,7 +76,9 @@ check_cxx_compiler_flags(<var>
   [QUIET]
 )
 ```
-Sets `<var>` if `int main() { return 0; }` can be compiled with `FLAGS`, `DEFINITIONS`, `INCLUDES` and linked with `FLAGS` and `LIBRARIES`. If `QUIET` is set nothing is printed.
+Sets `<var>` if `int main() { return 0; }` can be compiled with `FLAGS`, 
+`DEFINITIONS`, `INCLUDES` and linked with `FLAGS` and `LIBRARIES`. If `QUIET` is
+set, nothing is printed.
 
 (Internally sets `CMAKE_REQUIRED_*` and calls `check_cxx_compiler_flag`.)
 
@@ -79,12 +86,9 @@ Sets `<var>` if `int main() { return 0; }` can be compiled with `FLAGS`, `DEFINI
 ```
 add_cxx_flag_checked("flag ..." [variant] [REQUIRED])
 ```
-Add c++ compiler flag if compiler supports it.
-
-If the flags are supported, `CMAKE_CXX_FLAGS` is updated and `HAVE_CXX_FLAG_<FLAG>` is set.
-
+Add c++ compiler flag if compiler supports it. If the flags are supported, 
+`CMAKE_CXX_FLAGS` is updated and `HAVE_CXX_FLAG_<FLAG>` is set.
 If `<variant>` is set, `CMAKE_CXX_FLAGS_VARIANT` is updated.
-
 If `REQUIRED` is set, an error is show when the flag is not supported.
 
 ### add_flags
@@ -97,8 +101,10 @@ add_flags(
 )
 ```
 Adds compiler flags.
-
-`CXX` is added to `CMAKE_CXX_FLAGS`. `C` is added to `CMAKE_C_FLAGS`. `CPP` is added to `CMAKE_C_FLAGS` and `CMAKE_CXX_FLAGS`. `LD` is added to `CMAKE_EXE_LINKER_FLAGS`, `CMAKE_SHARED_LINKER_FLAGS` and `CMAKE_MODULE_LINKER_FLAGS`.
+`CXX` is added to `CMAKE_CXX_FLAGS`. `C` is added to `CMAKE_C_FLAGS`. `CPP` is 
+added to `CMAKE_C_FLAGS` and `CMAKE_CXX_FLAGS`. `LD` is added to 
+`CMAKE_EXE_LINKER_FLAGS`, `CMAKE_SHARED_LINKER_FLAGS` and 
+`CMAKE_MODULE_LINKER_FLAGS`.
 
 If `BUILD_TYPE` is set, `CMAKE_*_FLAGS_<BUILD_TYPE>` are used.
 
@@ -160,3 +166,4 @@ See https://wiki.debian.org/Hardening for a description of the features.
 - [ ] add_config: use CMAKE_CONFIGURATION_TYPES
 - [ ] add_cxx_flags_checked: add VARNAME arg
 - [ ] rename AddCXXFlags to AddCompilerFlags
+- [ ] test and document Sanitizer.cmake
