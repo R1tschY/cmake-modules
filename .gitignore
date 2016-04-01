@@ -1,3 +1,7 @@
+# Backups
+*~
+*.bak
+
 CMakeCache.txt
 CMakeFiles
 CMakeScripts
