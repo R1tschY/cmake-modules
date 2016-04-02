@@ -25,34 +25,43 @@
 include(AddConfig)
 include(AddCXXFlags)
 
-check_cxx_compiler_flags(HAVE_CXX_FLAG_COVERAGE FLAGS -coverage)
-if (HAVE_CXX_FLAG_COVERAGE)
+# TODO add is_build_type(<name> <var>) to AddConfig
+string(TOUPPER ${CMAKE_BUILD_TYPE} _CMAKE_BUILD_TYPE_UPPER)
+if (_CMAKE_BUILD_TYPE_UPPER STREQUAL "COVERAGE")
+	set(CMAKE_BUILD_TYPE_COVERAGE ON)
+endif()
+unset(_CMAKE_BUILD_TYPE_UPPER)
 
-  # new build type
+if (CMAKE_BUILD_TYPE_COVERAGE)
+	check_cxx_compiler_flags(HAVE_CXX_FLAG_COVERAGE FLAGS -coverage)
+	if (HAVE_CXX_FLAG_COVERAGE)
 
-  add_config(Coverage
-    C_FLAGS "-g -O0 -coverage"
-    CXX_FLAGS "-g -O0 -coverage"
-    LINKER_FLAGS "-g -O0 -coverage"
-  )
+		# new build type
 
-  # the tools
+		add_config(Coverage
+		  C_FLAGS "-g -O0 -coverage"
+		  CXX_FLAGS "-g -O0 -coverage"
+		  LINKER_FLAGS "-g -O0 -coverage"
+		)
 
-  find_program(GCOV_EXECUTABLE gcov)
-  find_program(LCOV_EXECUTABLE lcov)
-  find_program(GENHTML_EXECUTABLE genhtml)
-  find_program(GCOVR_EXECUTABLE gcovr)
+		# the tools
 
-  # default tool flags
+		find_program(GCOV_EXECUTABLE gcov)
+		find_program(LCOV_EXECUTABLE lcov)
+		find_program(GENHTML_EXECUTABLE genhtml)
+		find_program(GCOVR_EXECUTABLE gcovr)
 
-  if (UNIX)
-    set(LCOV_EXCLUDE "'/usr/*'" "'/opt/*'")
-  endif()
+		# default tool flags
 
-  set(GENHTML_FLAGS "--demangle-cpp --legend")
+		if (UNIX)
+		  set(LCOV_EXCLUDE "'/usr/*'" "'/opt/*'")
+		endif()
 
-else()
-  message(WARNING "using unsupported compiler for coverage measuring")
+		set(GENHTML_FLAGS "--demangle-cpp --legend")
+
+	else()
+		message(WARNING "using unsupported compiler for coverage measuring")
+	endif()
 endif()
 
 # add target which create coverage report for a command with lcov
@@ -70,7 +79,7 @@ endif()
 # globs are used in the coverage report. Use ``LCOV_FLAGS`` and ``GENHTML_FLAGS``
 # for extra arguments for ``lcov`` and ``genhtml``.
 function(add_coverage_target)
-  if ((NOT HAVE_CXX_FLAG_COVERAGE) OR (NOT CMAKE_BUILD_TYPE STREQUAL "Coverage"))
+  if ((NOT HAVE_CXX_FLAG_COVERAGE) OR (NOT CMAKE_BUILD_TYPE_COVERAGE))
     return()
   endif()
 

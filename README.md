@@ -167,3 +167,6 @@ See https://wiki.debian.org/Hardening for a description of the features.
 - [ ] add_cxx_flags_checked: add VARNAME arg
 - [ ] rename AddCXXFlags to AddCompilerFlags
 - [ ] test and document Sanitizer.cmake
+- [ ] test for clang
+- [ ] add_coverage_target: surround globs with `'`'s
+
