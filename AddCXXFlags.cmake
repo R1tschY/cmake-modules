@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (c) 2016 R1tschY
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +18,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-# 
+#
 
 include(CheckCXXCompilerFlag)
 include(CMakeParseArguments)
@@ -50,10 +50,10 @@ function(check_cxx_compiler_flags _var)
   set(multiValueArgs DEFINITIONS INCLUDES LIBRARIES)
   set(prefix CMAKE_REQUIRED)
   cmake_parse_arguments(${prefix} "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
- 
+
   # check
   check_cxx_compiler_flag("" ${_var})
-  
+
   # move _var to parent scope
   move_to_parent(${_var})
 
@@ -69,7 +69,7 @@ function(add_cxx_flag_checked _flag)
   string(TOUPPER "HAVE_CXX_FLAG_${_flag}" _haveFlagDef)
   string(REPLACE "+" "X" _haveFlagDef ${_haveFlagDef})
   string(REGEX REPLACE "[^A-Za-z0-9]+" "_" _haveFlagDef ${_haveFlagDef})
-  
+
   set(prefix _add_cxx_flag_checked)
   cmake_parse_arguments(${prefix} "REQUIRED" "" "" ${ARGN})
 
@@ -80,24 +80,25 @@ function(add_cxx_flag_checked _flag)
       string(TOUPPER "_${VARIANT}" VARIANT)
     endif()
     set(CMAKE_CXX_FLAGS${VARIANT} "${CMAKE_CXX_FLAGS${VARIANT}} ${_flag}" PARENT_SCOPE)
-    
+
   elseif(${prefix}_REQUIRED)
     message(ERROR "required flag `${_flag}' is not supported by c++ compiler")
   endif()
-  
+
   move_to_parent(${_haveFlagDef})
 endfunction()
 
 # add_flags(
-#   [CXX "--flag ..."] 
-#   [C "--flag ..."] 
+#   [CXX "-flag ..."]
+#   [C "-flag ..."]
 #   [CPP "-DDEFINE=0 ..."]
+#   [LD "-flag ..."]
 #   [BUILD_TYPE build_type]
 # )
 function(add_flags)
 
   # options
-	
+
   set(options )
   set(oneValueArgs CXX C CPP LD BUILD_TYPE)
   set(multiValueArgs )
@@ -105,41 +106,41 @@ function(add_flags)
   cmake_parse_arguments(${prefix} "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   # build type
-	
+
   set(${prefix}_variant ${${prefix}_BUILD_TYPE})
   if(${prefix}_variant)
     string(TOUPPER "_${${prefix}_variant}" ${prefix}_variant)
   endif()
-  
+
   # flags
-  
+
   if (${prefix}_C)
     append(CMAKE_C_FLAGS${${prefix}_variant} " ${${prefix}_C}")
   endif()
-	
+
   if (${prefix}_CXX)
     append(CMAKE_CXX_FLAGS${${prefix}_variant} " ${${prefix}_CXX}")
   endif()
-	
+
   if (${prefix}_CPP)
     append(CMAKE_C_FLAGS${${prefix}_variant} " ${${prefix}_CPP}")
   	append(CMAKE_CXX_FLAGS${${prefix}_variant} " ${${prefix}_CPP}")
   endif()
-  
+
   if (${prefix}_LD)
   	append(CMAKE_EXE_LINKER_FLAGS${${prefix}_variant} " ${${prefix}_LD}")
   	append(CMAKE_SHARED_LINKER_FLAGS${${prefix}_variant} " ${${prefix}_LD}")
   	append(CMAKE_MODULE_LINKER_FLAGS${${prefix}_variant} " ${${prefix}_LD}")
   endif()
-  
+
   # scope
-  
+
   move_to_parent(CMAKE_C_FLAGS${${prefix}_variant})
   move_to_parent(CMAKE_CXX_FLAGS${${prefix}_variant})
   move_to_parent(CMAKE_EXE_LINKER_FLAGS${${prefix}_variant})
   move_to_parent(CMAKE_SHARED_LINKER_FLAGS${${prefix}_variant})
   move_to_parent(CMAKE_MODULE_LINKER_FLAGS${${prefix}_variant})
-	
+
 endfunction()
 
 
