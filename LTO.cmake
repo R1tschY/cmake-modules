@@ -31,10 +31,14 @@ set(HAS_LTO_SUPPORT 1)
 function(enable_lto _name)
   set(oneValueArgs CONFIG)
   set(multiValueArgs )
+  set(options REQUIRE)
   set(prefix _enable_lto)
   cmake_parse_arguments(${prefix} "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   
   if (NOT HAS_LTO_SUPPORT)
+    if (${prefix}_REQUIRE)
+      message(ERROR "compiler or toolchain has no link-time-optimization support")
+    endif()  
     return()
   endif()
   
@@ -42,7 +46,6 @@ function(enable_lto _name)
   
   if (${prefix}_CONFIG)
     set(_build_type_arg CONFIG ${${prefix}_CONFIG})
-    set(_variant _${${prefix}_CONFIG})
   endif()
   
   # enable lto
