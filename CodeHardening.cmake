@@ -31,6 +31,7 @@ include(AddCXXFlags)
 # )
 # supported features: FORMAT FORTIFY STACKPROTECTOR PIE RELRO BINDNOW
 # 
+# TODO: test BUILD_TYPE parameter
 # see https://wiki.debian.org/Hardening
 function(hardening)
 	
@@ -44,9 +45,9 @@ function(hardening)
   
   # build type
   
-  set(_build_type_arg)
-  if (${prefix}_VARIANT)
-  	set(_build_type_arg BUILD_TYPE ${prefix}_BUILD_TYPE)
+  if (${prefix}_BUILD_TYPE)
+  	set(_build_type_arg BUILD_TYPE ${${prefix}_BUILD_TYPE})
+  	set(_variant _${${prefix}_BUILD_TYPE})
   endif()
   
   # feature list
@@ -55,7 +56,6 @@ function(hardening)
   
   # identify features to use
   
-  set(_enabled )
   if (${prefix}_ALL)
   	set(_enabled ${_features})
  	endif()
@@ -129,9 +129,9 @@ function(hardening)
   
   # scope
   
-  move_to_parent(CMAKE_C_FLAGS${${prefix}_variant})
-	move_to_parent(CMAKE_CXX_FLAGS${${prefix}_variant})
-	move_to_parent(CMAKE_EXE_LINKER_FLAGS${${prefix}_variant})
-	move_to_parent(CMAKE_SHARED_LINKER_FLAGS${${prefix}_variant})
-	move_to_parent(CMAKE_MODULE_LINKER_FLAGS${${prefix}_variant})
+  move_to_parent(CMAKE_C_FLAGS${_variant})
+  move_to_parent(CMAKE_CXX_FLAGS${_variant})
+  move_to_parent(CMAKE_EXE_LINKER_FLAGS${_variant})
+  move_to_parent(CMAKE_SHARED_LINKER_FLAGS${_variant})
+  move_to_parent(CMAKE_MODULE_LINKER_FLAGS${_variant})
 endfunction()
