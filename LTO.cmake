@@ -35,7 +35,7 @@ endfunction()
 # feature detection
 
 check_cxx_compiler_flags(_HAS_COMPILER_LTO FLAGS -flto)
-if (NOT HAS_LTO_COMPILER)
+if (NOT _HAS_COMPILER_LTO)
   message(WARNING "Compiler has no link-time-optimization support")
   return()
 endif()
@@ -44,18 +44,19 @@ execute_process(
     COMMAND ${CMAKE_AR} --help
     OUTPUT_VARIABLE _CMAKE_AR_HELP_OUTPUT
 )
-if (NOT _CMAKE_AR_HELP_OUTPUT MATCHES "plugin")
+if (NOT _CMAKE_AR_HELP_OUTPUT MATCHES "-plugin")
   message(WARNING "${CMAKE_AR} has no plugin support needed for link-time-optimization")
-  unset(HAS_LTO_COMPILER)
+  unset(_HAS_COMPILER_LTO)
   return()
 endif()
 
 execute_process(
-    COMMAND ${CMAKE_LD} --help
+    COMMAND ${CMAKE_LINKER} --help
     OUTPUT_VARIABLE _CMAKE_LD_HELP_OUTPUT
 )
-if (NOT _CMAKE_LD_HELP_OUTPUT MATCHES "plugin")
-  message(WARNING "${CMAKE_LD} has no plugin support needed for link-time-optimization")
+if (NOT _CMAKE_LD_HELP_OUTPUT MATCHES "-plugin")
+  message(WARNING "${CMAKE_LINKER} has no plugin support needed for link-time-optimization")
+  unset(_HAS_COMPILER_LTO)
   return()
 endif()
 
