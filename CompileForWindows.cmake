@@ -105,3 +105,67 @@ function(compile_for_windows)
   move_to_parent(CMAKE_SHARED_LINKER_FLAGS)
   move_to_parent(CMAKE_MODULE_LINKER_FLAGS)
 endfunction()
+
+
+function(target_set_versioninfo)
+
+  # options
+  
+  set(options )
+  set(oneValueArgs TARGET COMPANY DESCRIPTION FILE_VERSION COPYRIGHT PRODUCT_NAME VERSION)
+  set(multiValueArgs )
+  set(prefix _target_set_versioninfo)
+  cmake_parse_arguments(${prefix} "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  
+  if (NOT ${prefix}_TARGET)
+    message(ERROR "target_set_versioninfo: TARGET argument required")
+  endif()
+  
+  # vars
+  
+  set(VERSIONINFO_SRC "${CMAKE_CURRENT_SOURCE_DIR}/bits/versioninfo.rc")
+  set(VERSIONINFO_DEST "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT}-versioninfo.rc")
+  
+  # content
+  
+  set(VERSIONINFO_VALUES "")  
+  macro(add_value key value)
+    if (${prefix}_COMPANY)
+      set(VERSIONINFO_VALUES "$VERSIONINFO_VALUES\n            VALUE \"${key}\", ${value}")
+    endif()
+  endmacro()
+  
+  if (${prefix}_FILE_VERSION)
+    # check format
+    string(REGEX MATCH "^(\d+)(?:.(\d+)(?:.(\d+)(?:.(\d+))))$" VERSION_VALID "${${prefix}_FILE_VERSION}")
+    if (NOT VERSION_VALID)
+      message(ERROR "target_set_versioninfo: FILE_VERSION argument invalid: `${${prefix}_FILE_VERSION}`")
+    endif()
+    
+    # pad 0s 
+    string(REPLACE "." ";" FILE_VERSION_LIST "${${prefix}_FILE_VERSION}")
+    set(FILE_VERSION_LIST "${FILE_VERSION_LIST};0;0;0")
+    list(GET FILE_VERSION_LIST 0 1 2 3 FILE_VERSION)
+    
+    # list to args
+    string(REPLACE ";" "," ${prefix}_FILE_VERSION "${FILE_VERSION}")    
+  endif()
+  
+  add_value("CompanyName" "${${prefix}_COMPANY}")
+  add_value("FileDescription" "${${prefix}_DESCRIPTION}")
+  add_value("FileVersion" "${${prefix}_FILE_VERSION}")
+  add_value("LegalCopyright" "${${prefix}_COPYRIGHT}")
+  add_value("ProductName" "${${prefix}_PRODUCT_NAME}")
+  add_value("ProductVersion" "${${prefix}_VERSION}")
+  
+  # generate
+  
+  configure_file("${VERSIONINFO_SRC}" "${VERSIONINFO_DEST}"
+                 @ONLY NEWLINE_STYLE WIN32)
+                 
+  # add
+    
+  target_sources(${${prefix}_TARGET} PRIVATE "${VERSIONINFO_DEST}")
+
+endfunction()
+
