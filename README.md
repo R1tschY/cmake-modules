@@ -34,11 +34,11 @@ add_config(<name>
 )
 ```
 
-Add a new build type (configuration). Use `CMAKE_BUILD_TYPE` to use it:
+Add a new build type (configuration) `<name>`. Use `CMAKE_BUILD_TYPE` to use it:
 
     cmake -DCMAKE_BUILD_TYPE=<name> <PATH_TO_SOURCE>
 
-Adds a new build type (configuration) `<name>`. If `COPY_FROM` is set, the 
+If `COPY_FROM` is set, the 
 compile flags from the configuration `config` are copied. The `*_FLAGS` 
 arguments are appended to `CMAKE_*_FLAGS_<NAME>`. The flags from `LINKER_FLAGS` 
 are appended to `CMAKE_EXE_LINKER_FLAGS_<NAME>`, 
