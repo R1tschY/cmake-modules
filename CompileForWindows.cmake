@@ -129,7 +129,7 @@ function(add_windows_versioninfo)
   cmake_parse_arguments(${prefix} "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   
   if (NOT ${prefix}_TARGET)
-    message(FATAL_ERROR "target_set_versioninfo: TARGET argument required")
+    message(FATAL_ERROR "add_windows_versioninfo: TARGET argument required")
   endif()
   
   default_arguments(
@@ -171,7 +171,7 @@ function(add_windows_versioninfo)
     set(VERSIONINFO_FILE_TYPE VFT_DLL)
     set(default_suffix .dll)
   else()
-    message(FATAL_ERROR "target_set_versioninfo: TARGET has unsupported type `${target_type}`")
+    message(FATAL_ERROR "add_windows_versioninfo: TARGET has unsupported type `${target_type}`")
   endif()
   
   # target_basename / target_filebase
@@ -198,7 +198,7 @@ function(add_windows_versioninfo)
   
   __match_version("${${prefix}_FILE_VERSION}" FILE_VERSION_VALID)
   if (NOT FILE_VERSION_VALID)
-    message(FATAL_ERROR "target_set_versioninfo: FILE_VERSION argument invalid: `${${prefix}_FILE_VERSION}`")
+    message(FATAL_ERROR "add_windows_versioninfo: FILE_VERSION argument invalid: `${${prefix}_FILE_VERSION}`")
   endif()
   
   __version_dots_to_colons("${FILE_VERSION_VALID}" ${prefix}_FILE_VERSION_INTS)
@@ -210,7 +210,7 @@ function(add_windows_versioninfo)
   
   __match_version("${${prefix}_PRODUCT_VERSION}" PRODUCT_VERSION_VALID)
   if (NOT PRODUCT_VERSION_VALID)
-    message(FATAL_ERROR "target_set_versioninfo: PRODUCT_VERSION argument invalid: `${${prefix}_PRODUCT_VERSION}`")
+    message(FATAL_ERROR "add_windows_versioninfo: PRODUCT_VERSION argument invalid: `${${prefix}_PRODUCT_VERSION}`")
   endif()
   
   __version_dots_to_colons("${PRODUCT_VERSION_VALID}" ${prefix}_PRODUCT_VERSION_INTS)
@@ -258,6 +258,88 @@ function(add_windows_versioninfo)
  
   if (${prefix}_RC_FILE)
     set(${${prefix}_RC_FILE} "${dest}" PARENT_SCOPE)
+  endif()
+
+endfunction()
+
+
+# see: https://msdn.microsoft.com/en-us/library/windows/desktop/aa374191(v=vs.85).aspx
+function(add_windows_manifest)
+
+  ##
+  # options
+  
+  set(options )
+  set(oneValueArgs TARGET TEMPLATE_FILE FILE_PATH RC_FILE
+                   ASSEMBLY_VERSION ASSEMBLY_NAME)
+  set(multiValueArgs )
+  set(prefix MANIFEST)
+  cmake_parse_arguments(${prefix} "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  
+  if (NOT ${prefix}_TARGET)
+    message(FATAL_ERROR "add_windows_manifest: TARGET argument required")
+  endif()
+  
+  ##
+  # ASSEMBLY_VERSION
+  
+  if (NOT ${prefix}_ASSEMBLY_VERSION)
+    if (PROJECT_VERSION)
+      set(${prefix}_ASSEMBLY_VERSION "${PROJECT_VERSION}")
+    else()
+      set(${prefix}_ASSEMBLY_VERSION "0")
+    endif()  
+  endif()
+  
+  # pad ".0"s 
+  string(REPLACE "." ";" ASSEMBLY_VERSION_LIST "${${prefix}_ASSEMBLY_VERSION}")
+  set(ASSEMBLY_VERSION_LIST "${ASSEMBLY_VERSION_LIST};0;0;0")
+  list(GET ASSEMBLY_VERSION_LIST 0 1 2 3 ${prefix}_ASSEMBLY_VERSION)
+  string(REPLACE ";" "." ${prefix}_ASSEMBLY_VERSION "${${prefix}_ASSEMBLY_VERSION}")
+  
+  ##
+  # ASSEMBLY_NAME
+  
+  if (NOT ${prefix}_ASSEMBLY_NAME)
+    if (PROJECT_NAME)
+      set(${prefix}_ASSEMBLY_NAME "UnknownOrganization.${PROJECT_NAME}.${${prefix}_TARGET}")
+    else()
+      set(${prefix}_ASSEMBLY_NAME "UnknownOrganization.UnknownDivision.${${prefix}_TARGET}")
+    endif()  
+  endif()
+  
+  ##
+  # ASSEMBLY_PROCESSOR_ARCHITECTURE
+  
+  if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(${prefix}_ASSEMBLY_PROCESSOR_ARCHITECTURE "ia64")
+  else()
+    set(${prefix}_ASSEMBLY_PROCESSOR_ARCHITECTURE "x86")
+  endif()
+  
+  ##
+  # generate
+  
+  if (NOT ${prefix}_TEMPLATE_FILE)
+    set(${prefix}_TEMPLATE_FILE "${R1TSCHY_CMAKEMODULES_BITS_DIR}//template.manifest")
+  endif()
+  
+  set(${prefix}_FILE_PATH "${CMAKE_CURRENT_BINARY_DIR}/${${prefix}_TARGET}.manifest")
+  set(dest_rc "${CMAKE_CURRENT_BINARY_DIR}/${${prefix}_TARGET}-manifest.rc")
+  set(src_rc "${R1TSCHY_CMAKEMODULES_BITS_DIR}//manifest.rc")
+  
+  configure_file("${${prefix}_TEMPLATE_FILE}" "${${prefix}_FILE_PATH}" 
+                 @ONLY NEWLINE_STYLE WIN32)
+  configure_file("${src_rc}" "${dest_rc}" @ONLY NEWLINE_STYLE WIN32)  
+   
+  target_sources(${${prefix}_TARGET} PRIVATE "${dest_rc}")
+ 
+  if (${prefix}_FILE_PATH)
+    set(${${prefix}_FILE_PATH} "${${${prefix}_FILE_PATH}}" PARENT_SCOPE)
+  endif()
+  
+  if (${prefix}_RC_FILE)
+    set(${${prefix}_RC_FILE} "${dest_rc}" PARENT_SCOPE)
   endif()
 
 endfunction()
