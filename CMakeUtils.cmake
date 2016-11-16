@@ -38,3 +38,20 @@ function(list_dirs result curdir)
   endforeach()
   move_to_parent(${result})
 endfunction()
+
+
+function(default_arguments prefix)
+  list(LENGTH ARGN args)
+  math(EXPR args "${args} - 1")
+
+  foreach(arg0 RANGE 0 ${args} 2)
+    math(EXPR arg1 "${arg0} + 1")
+    list(GET ARGN ${arg0} arg)
+    list(GET ARGN ${arg1} default)
+    
+    if (NOT ${prefix}_${arg})
+      set(${prefix}_${arg} "${default}" PARENT_SCOPE)
+    endif()
+  endforeach()
+
+endfunction()

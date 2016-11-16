@@ -21,6 +21,7 @@
 # 
 
 include(CMakeParseArguments)
+include(CMakeUtils)
 include(AddCXXFlags)
 
 set(R1TSCHY_CMAKEMODULES_BITS_DIR "${CMAKE_CURRENT_LIST_DIR}/bits")
@@ -109,22 +110,6 @@ function(compile_for_windows)
 endfunction()
 
 
-macro(__match_version version match_var)
-  string(REGEX MATCH "^[0-9]+(.[0-9]+)+" ${match_var} "${version}")
-endmacro()
-
-function(__version_dots_to_colons dots var_colons)
-  # pad 0s 
-  string(REPLACE "." ";" FILE_VERSION_LIST "${dots}")
-  set(FILE_VERSION_LIST "${FILE_VERSION_LIST};0;0;0")
-  list(GET FILE_VERSION_LIST 0 1 2 3 FILE_VERSION)
-  
-  # list to args
-  string(REPLACE ";" "," ${var_colons} "${FILE_VERSION}")
-  
-  set(${var_colons} "${${var_colons}}" PARENT_SCOPE)
-endfunction()
-
 # see https://msdn.microsoft.com/en-us/library/windows/desktop/aa381058(v=vs.85).aspx
 # requires CMake 3.1
 function(add_windows_versioninfo)
@@ -136,9 +121,9 @@ function(add_windows_versioninfo)
   set(oneValueArgs TARGET 
                    COMPANY_NAME FILE_DESCRIPTION FILE_VERSION 
                      LEGAL_COPYRIGHT PRODUCT_NAME PRODUCT_VERSION
-                     COMMENTS INTERNAL_NAME INTERNAL_NAME LEGAL_TRADEMARKS
-                   PRIVATEBUILD SPECIALBUILD
-                   RC_FILE)
+                     COMMENTS INTERNAL_NAME LEGAL_TRADEMARKS
+                   PRIVATE_BUILD SPECIAL_BUILD
+                   RC_FILE RC_FILE_TEMPLATE)
   set(multiValueArgs )
   set(prefix VERSIONINFO)
   cmake_parse_arguments(${prefix} "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -146,12 +131,36 @@ function(add_windows_versioninfo)
   if (NOT ${prefix}_TARGET)
     message(FATAL_ERROR "target_set_versioninfo: TARGET argument required")
   endif()
- 
-  ##
-  # vars
   
-  set(src "${R1TSCHY_CMAKEMODULES_BITS_DIR}//versioninfo.rc")
-  set(dest "${CMAKE_CURRENT_BINARY_DIR}/${${prefix}_TARGET}-versioninfo.rc")
+  default_arguments(
+    ${prefix}
+    COMPANY_NAME ""
+    FILE_DESCRIPTION ""
+    FILE_VERSION "${PROJECT_VERSION}"
+    INTERNAL_NAME "${target_filebase}"
+    ORIGINAL_FILENAME "${target_basename}"
+    PRODUCT_NAME "${PROJECT_NAME}"
+    PRODUCT_VERSION "${PROJECT_VERSION}"
+  )
+  
+  ##
+  # helper
+  
+  macro(__match_version version match_var)
+    string(REGEX MATCH "^[0-9]+(.[0-9]+)+" ${match_var} "${version}")
+  endmacro()
+
+  function(__version_dots_to_colons dots var_colons)
+    # pad 0s 
+    string(REPLACE "." ";" FILE_VERSION_LIST "${dots}")
+    set(FILE_VERSION_LIST "${FILE_VERSION_LIST};0;0;0")
+    list(GET FILE_VERSION_LIST 0 1 2 3 FILE_VERSION)
+  
+    # list to args
+    string(REPLACE ";" "," ${var_colons} "${FILE_VERSION}")
+  
+    set(${var_colons} "${${var_colons}}" PARENT_SCOPE)
+  endfunction()
   
   # VERSIONINFO_FILE_TYPE / default_suffix
   get_property(target_type TARGET ${${prefix}_TARGET} PROPERTY TYPE)
@@ -176,27 +185,8 @@ function(add_windows_versioninfo)
   endif()
   set(target_basename "${target_outputname}${target_suffix}")
   set(target_filebase "${target_outputname}")
-  
-  ##
-  # helper
-
-  macro(add_value_required key value default)
-    if (${value})
-      list(APPEND VERSIONINFO_VALUES_LIST "VALUE \"${key}\", \"${${value}}\\0\"")
-    else()
-      list(APPEND VERSIONINFO_VALUES_LIST "VALUE \"${key}\", \"${default}\\0\"")
-    endif()
-  endmacro()  
-  macro(add_value key value)
-    if (${value})
-      list(APPEND VERSIONINFO_VALUES_LIST "VALUE \"${key}\", \"${${value}}\\0\"")
-    endif()
-  endmacro()
-  macro(add_header key value)
-    if (${value})
-      list(APPEND VERSIONINFO_HEADER_LIST "${key} ${${value}}")
-    endif()
-  endmacro()
+  unset(default_suffix)
+  unset(target_suffix)
   
   ##
   # header
@@ -211,8 +201,7 @@ function(add_windows_versioninfo)
     message(FATAL_ERROR "target_set_versioninfo: FILE_VERSION argument invalid: `${${prefix}_FILE_VERSION}`")
   endif()
   
-  __version_dots_to_colons("${FILE_VERSION_VALID}" FILE_VERSION_COLONS)
-  add_header(FILEVERSION FILE_VERSION_COLONS)
+  __version_dots_to_colons("${FILE_VERSION_VALID}" ${prefix}_FILE_VERSION_INTS)
   
   # PRODUCTVERSION
   if (NOT ${prefix}_PRODUCT_VERSION)
@@ -224,31 +213,14 @@ function(add_windows_versioninfo)
     message(FATAL_ERROR "target_set_versioninfo: PRODUCT_VERSION argument invalid: `${${prefix}_PRODUCT_VERSION}`")
   endif()
   
-  __version_dots_to_colons("${PRODUCT_VERSION_VALID}" PRODUCT_VERSION_COLONS)
-  add_header(PRODUCTVERSION PRODUCT_VERSION_COLONS)
-  
-  ##
-  # content
-  
-  add_value         ("Comments" ${prefix}_COMMENTS)
-  add_value_required("CompanyName" ${prefix}_COMPANY_NAME "")
-  add_value_required("FileDescription" ${prefix}_FILE_DESCRIPTION "")
-  add_value_required("FileVersion" ${prefix}_FILE_VERSION "${PROJECT_VERSION}")
-  add_value_required("InternalName" ${prefix}_INTERNAL_NAME "${target_filebase}")
-  add_value         ("LegalCopyright" ${prefix}_LEGAL_COPYRIGHT)
-  add_value         ("LegalTrademarks" ${prefix}_LEGAL_TRADEMARKS)
-  add_value_required("OriginalFilename" ${prefix}_ORIGINAL_FILENAME "${target_basename}")
-  add_value_required("ProductName" ${prefix}_PRODUCT_NAME "${PROJECT_NAME}")
-  add_value_required("ProductVersion" ${prefix}_PRODUCT_VERSION "${PROJECT_VERSION}")
-  
-  if (${prefix}_PRIVATEBUILD)
+  __version_dots_to_colons("${PRODUCT_VERSION_VALID}" ${prefix}_PRODUCT_VERSION_INTS)
+    
+  if (${prefix}_PRIVATE_BUILD)
     list(APPEND VERSIONINFO_FILEFLAGS VS_FF_PRIVATEBUILD)
-    add_value("PrivateBuild" ${prefix}_PRIVATEBUILD)
   endif()
  
-  if (${prefix}_SPECIALBUILD)
+  if (${prefix}_SPECIAL_BUILD)
     list(APPEND VERSIONINFO_FILEFLAGS VS_FF_SPECIALBUILD)
-    add_value("SpecialBuild" ${prefix}_SPECIALBUILD)
   endif()
   
   if (${prefix}_DEBUG)
@@ -263,10 +235,7 @@ function(add_windows_versioninfo)
     list(APPEND VERSIONINFO_FILEFLAGS VS_FF_PRERELEASE)
   endif()
   
-  # join
-  string(REPLACE ";" "\n  " VERSIONINFO_HEADER "${VERSIONINFO_HEADER_LIST}")
-  string(REPLACE ";" "\n      " VERSIONINFO_VALUES "${VERSIONINFO_VALUES_LIST}")
-  
+  # VERSIONINFO_FILEFLAGS  
   if (VERSIONINFO_FILEFLAGS)
     string(REPLACE ";" "|" VERSIONINFO_FILEFLAGS "(${VERSIONINFO_FILEFLAGS})")
   else()
@@ -276,9 +245,17 @@ function(add_windows_versioninfo)
   ##
   # generate
   
-  configure_file("${src}" "${dest}" @ONLY NEWLINE_STYLE WIN32)   
-  target_sources(${${prefix}_TARGET} PRIVATE "${dest}")
+  set(dest "${CMAKE_CURRENT_BINARY_DIR}/${${prefix}_TARGET}-versioninfo.rc")
   
+  if (${prefix}_RC_FILE_TEMPLATE)
+    set(src "${${prefix}_RC_FILE_TEMPLATE}")
+  else()
+    set(src "${R1TSCHY_CMAKEMODULES_BITS_DIR}//versioninfo.rc")
+  endif()
+  
+  configure_file("${src}" "${dest}" NEWLINE_STYLE WIN32)   
+  target_sources(${${prefix}_TARGET} PRIVATE "${dest}")
+ 
   if (${prefix}_RC_FILE)
     set(${${prefix}_RC_FILE} "${dest}" PARENT_SCOPE)
   endif()
