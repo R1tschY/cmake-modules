@@ -55,3 +55,8 @@ function(default_arguments prefix)
   endforeach()
 
 endfunction()
+
+
+function(color_message style)
+  execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --${style} "${ARGN}")
+endfunction()
