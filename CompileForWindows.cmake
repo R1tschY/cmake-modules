@@ -44,7 +44,7 @@ function(compile_for_windows)
 	
   # options
 	
-  set(options UNICODE STRICT)
+  set(options UNICODE STRICT WINMAIN)
   set(oneValueArgs VERSION)
   set(multiValueArgs )
   set(prefix _compile_for_windows)
@@ -52,12 +52,18 @@ function(compile_for_windows)
  
   # subsystem
   
-  add_flags(LD "-Wl,--subsystem,windows")  
+  if (${prefix}_WINMAIN)
+    add_flags(LD "-Wl,--subsystem,windows")
+  endif()  
   
   # unicode
   
   if (${prefix}_UNICODE)
-  	add_flags(CPP "-DUNICODE -D_UNICODE" LD "-municode")
+    if (${prefix}_WINMAIN)
+  	  add_flags(CPP "-DUNICODE -D_UNICODE" LD "-municode")
+  	else()
+  	  add_flags(CPP "-DUNICODE -D_UNICODE")
+  	endif()
   endif()
   
   # strict
@@ -94,7 +100,7 @@ function(compile_for_windows)
 			set(_short_version 0x0A00)
 			set(_ie_version    0x0A00)
 		else()
-			message(ERROR "${${prefix}_VERSION} is not a supported value for the VERSION option. Use XP, Vista, 7, 8 or 10.")
+			message(FATAL_ERROR "${${prefix}_VERSION} is not a supported value for the VERSION option. Use XP, Vista, 7, 8 or 10.")
 		endif()
 			
 		add_flags(CPP "-DNTDDI_VERSION=${_long_version} -D_WIN32_WINNT=${_short_version} -DWINVER=${_short_version} -D_WIN32_IE=${_ie_version}")
