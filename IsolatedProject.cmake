@@ -5,8 +5,8 @@ function(add_isolated_project)
   # options
 
   set(options ADD_TO_ALL)
-  set(oneValueArgs TARGET DIR COMMENT)
-  set(multiValueArgs PASSTHROUGH NEW)
+  set(oneValueArgs TARGET DIR COMMENT CMAKE GENERATOR)
+  set(multiValueArgs PASSTHROUGH NEW CMAKE_EXTRA_ARGS)
   set(prefix add_isolated_project)
   cmake_parse_arguments(${prefix} "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   
@@ -27,6 +27,13 @@ function(add_isolated_project)
   
   # CMAKE
   
+  if (NOT ${prefix}_CMAKE)
+    set(${prefix}_CMAKE ${CMAKE_COMMAND})
+  endif()
+  if (NOT ${prefix}_GENERATOR)
+    set(${prefix}_GENERATOR ${CMAKE_GENERATOR})
+  endif()
+  
   # add_custom_target options
   if (${prefix}_ADD_TO_ALL)
     list(APPEND _options "ALL")
@@ -36,6 +43,8 @@ function(add_isolated_project)
   endif()
   
   # cmake options
+  list(APPEND _cmake_options ${${prefix}_CMAKE_EXTRA_ARGS})
+  list(APPEND _cmake_options "-G${${prefix}_GENERATOR}")
   foreach(_var ${${prefix}_PASSTHROUGH})
     list(APPEND _cmake_options "-D${_var}=${${_var}}")
   endforeach()
@@ -44,7 +53,7 @@ function(add_isolated_project)
   endforeach()
   
   execute_process(
-    COMMAND ${CMAKE_COMMAND} ${_cmake_options} "${CMAKE_SOURCE_DIR}"
+    COMMAND ${${prefix}_CMAKE} ${_cmake_options} "${CMAKE_SOURCE_DIR}"
     WORKING_DIRECTORY "${${prefix}_DIR}"
   )
   
@@ -52,7 +61,7 @@ function(add_isolated_project)
     "${${prefix}_TARGET}" 
     ${_options}
     WORKING_DIRECTORY "${${prefix}_DIR}"
-    COMMAND ${CMAKE_COMMAND} "--build" "."
+    COMMAND ${${prefix}_CMAKE} "--build" "${${prefix}_DIR}"
   )
 
 endfunction()
