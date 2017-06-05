@@ -53,7 +53,7 @@ function(add_isolated_project)
   endforeach()
   
   execute_process(
-    COMMAND ${${prefix}_CMAKE} ${_cmake_options} "${CMAKE_SOURCE_DIR}"
+    COMMAND "${${prefix}_CMAKE}" ${_cmake_options} "${CMAKE_SOURCE_DIR}"
     WORKING_DIRECTORY "${${prefix}_DIR}"
   )
   
@@ -61,7 +61,18 @@ function(add_isolated_project)
     "${${prefix}_TARGET}" 
     ${_options}
     WORKING_DIRECTORY "${${prefix}_DIR}"
-    COMMAND ${${prefix}_CMAKE} "--build" "${${prefix}_DIR}"
+    COMMAND "${${prefix}_CMAKE}" "--build" "${${prefix}_DIR}"
   )
+  
+  if (NOT TARGET cclean)
+    add_custom_target(cclean)
+  endif()
+  
+  add_custom_command(
+    TARGET cclean
+    POST_BUILD
+    COMMAND "${${prefix}_CMAKE}" "--build" "${${prefix}_DIR}" "--target=clean"
+    WORKING_DIRECTORY "${${prefix}_DIR}"
+    COMMENT "Cleaning ${${prefix}_TARGET} ..." VERBATIM)
 
 endfunction()
