@@ -20,17 +20,46 @@
 # SOFTWARE.
 # 
 
-# compiles with sanitizer:
-#   cmake -DSANITIZER=Thread .
-
-include(CMakeUtils)
+include(CMakeParseArguments)
 include(AddCXXFlags)
 
-if (NOT SANITIZER)
- return()
-endif()
+# set flags when using glibcxx
+# glibcxx_flags(
+#           [CONCEPT_CHECKS] [ASSERTIONS] [DEBUG] [DEBUG_PEDANTIC] [PARALLEL]
+#           [PROFILE]
+# )
+# 
+# see https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_macros.html
+# 
+function(glibcxx_flags)
+    
+  # options
+    
+  set(options CONCEPT_CHECKS ASSERTIONS DEBUG DEBUG_PEDANTIC PARALLEL PROFILE)
+  set(oneValueArgs BUILD_TYPE)
+  set(multiValueArgs )
+  set(prefix _glibcxx_flags)
+  cmake_parse_arguments(${prefix} "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+ 
+  # build type
+  
+  if (${prefix}_BUILD_TYPE)
+    set(_build_type_arg BUILD_TYPE ${${prefix}_BUILD_TYPE})
+  endif()
+  
+  # flags
+ 
+  foreach(flag ${options})
+      if(${prefix}_${flag})
+        add_flags(CPP "-D_GLIBCXX_${flag}" ${_build_type_arg})
+      endif()
+  endforeach()
+ 
+  # scope
 
-string(TOLOWER SANITIZER ${SANITIZER})
-
-add_cxx_flags_checked(-fsanitize=${SANITIZER} VARNAME _var REQUIRED)
-move_to_parent(${_var})
+  move_to_parent(CMAKE_C_FLAGS)
+  move_to_parent(CMAKE_CXX_FLAGS)
+  move_to_parent(CMAKE_EXE_LINKER_FLAGS)
+  move_to_parent(CMAKE_SHARED_LINKER_FLAGS)
+  move_to_parent(CMAKE_MODULE_LINKER_FLAGS)
+endfunction()
